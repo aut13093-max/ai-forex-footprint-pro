@@ -18,6 +18,7 @@ label,.sm,small{font-size:12px;color:var(--mut)}
 label{display:block;margin:8px 0}
 input,select,button,textarea{width:100%;padding:11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
 button{background:#087ea4;color:white;font-weight:bold;margin-top:8px}
+button:disabled{opacity:.55}
 textarea{height:100px}
 .m{background:var(--bg);padding:10px;border-radius:8px;overflow-wrap:anywhere}
 .v{font-size:17px;font-weight:bold;margin-top:6px}
@@ -37,8 +38,9 @@ td:first-child,th:first-child{text-align:left}
 <body>
 <header>
 <h1>AI FOREX FOOTPRINT PRO</h1>
-<div class="sm">行情分析 · 市场结构 · 流动性 · Delta估算 · 风险管理</div>
+<div class="sm">行情分析 · 市场结构 · 流动性 · Delta估算 · Gemini AI · 风险管理</div>
 </header>
+
 <main>
 <section class="card">
 <h2>① 行情设置</h2>
@@ -63,7 +65,7 @@ td:first-child,th:first-child{text-align:left}
 <section class="card">
 <h2>② K线图</h2>
 <canvas id="cv"></canvas>
-<p class="sm">黄线EMA20，蓝线EMA50；▲▼为摆动点。流动性扫单为规则识别，并非真实订单簿。</p>
+<p class="sm">黄线EMA20，蓝线EMA50；▲▼为摆动点。流动性扫单为规则识别。外汇Delta为估算值，并非真实订单流。</p>
 </section>
 
 <section class="card">
@@ -115,8 +117,30 @@ td:first-child,th:first-child{text-align:left}
 <div class="m"><small>每标准手每点价值</small><div class="v" id="r4">—</div></div>
 </div>
 <p id="rw" class="sm"></p>
-<p class="sm">手数为估算值。不同券商的合约大小、最小手数和账户币种可能不同，请先核对规格。</p>
+<p class="sm">手数为估算值。不同券商的合约大小、最小手数和账户币种可能不同，请核对合约规格。</p>
 </section>
+
+<section class="card">
+<h2>⑦ Gemini AI 市场分析</h2>
+<div class="row">
+<div><label>市场方向</label><select id="aiDirection">
+<option value="上涨趋势">上涨趋势</option>
+<option value="下跌趋势">下跌趋势</option>
+<option value="震荡市场">震荡市场</option>
+</select></div>
+<div><label>市场结构</label><select id="aiStructure">
+<option value="趋势回调">趋势回调</option>
+<option value="突破">突破</option>
+<option value="流动性扫单">流动性扫单</option>
+<option value="区间震荡">区间震荡</option>
+</select></div>
+</div>
+<button id="aiBtn" onclick="runGeminiAnalysis()">调用 Gemini AI 分析</button>
+<div id="aiStatus" class="status sm">等待分析</div>
+<div id="aiResult" class="m" style="white-space:pre-wrap;margin-top:10px">尚未生成 AI 分析。</div>
+<p class="sm">AI只会分析传入的数据，不自动读取新闻，不保证盈利，不自动下单。</p>
+</section>
+
 <section class="card sm">不连接实盘、不自动下单。分析结果仅供参考，不构成投资建议。</section>
 </main>
 
@@ -139,12 +163,12 @@ const cls=x=>x>0?'g':x<0?'r':'y';
 async function loadMarket(){
  const btn=$('loadBtn');
  btn.disabled=true;
- $('src').textContent='正在请求真实行情...';
+ $('src').textContent='正在请求行情...';
  try{
   const symbol=$('symbol').value,tf=$('tf').value;
   const res=await fetch('/api/quote?symbol='+encodeURIComponent(symbol)+'&timeframe='+encodeURIComponent(tf),{cache:'no-store'});
   const data=await res.json();
-  if(!res.ok)throw Error(data.error||'HTTP '+res.status);
+  if(!res.ok)throw Error(data.details||data.error||'HTTP '+res.status);
   for(const k of ['o','h','l','c','v']){
    if(!Array.isArray(data[k]))throw Error('API缺少数组：'+k);
   }
@@ -156,11 +180,11 @@ async function loadMarket(){
    if(![d.o[i],d.h[i],d.l[i],d.c[i],d.v[i]].every(Number.isFinite))throw Error('行情包含无效数字');
    if(d.h[i]<Math.max(d.o[i],d.c[i],d.l[i])||d.l[i]>Math.min(d.o[i],d.c[i],d.h[i]))throw Error('K线高低价异常');
   }
-  D={...d,src:'API真实行情',volumeEstimated:!!data.volumeEstimated};
+  D={...d,src:'API行情'};
   analyze();
-  $('src').textContent='来源：API行情；'+D.c.length+'根K线'+(D.volumeEstimated?'；成交量为估算/非统一市场量':'');
+  $('src').textContent='来源：API行情；'+D.c.length+'根K线。';
  }catch(e){
-  $('src').textContent='行情获取失败：'+e.message+'。检查API Key、/api/quote和Vercel日志。';
+  $('src').textContent='行情获取失败：'+e.message;
  }finally{btn.disabled=false}
 }
 
@@ -174,13 +198,13 @@ function importCsv(){
  }
  if(rows.length<40){alert('有效K线不足40行，请检查CSV格式');return}
  const R=rows.slice(-140);
- D={o:R.map(x=>x.o),h:R.map(x=>x.h),l:R.map(x=>x.l),c:R.map(x=>x.c),v:R.map(x=>x.v),src:'CSV导入',volumeEstimated:false};
+ D={o:R.map(x=>x.o),h:R.map(x=>x.h),l:R.map(x=>x.l),c:R.map(x=>x.c),v:R.map(x=>x.v),src:'CSV导入'};
  analyze();
- $('src').textContent='来源：CSV导入；'+D.c.length+'根K线。成交量真实性取决于文件来源。';
+ $('src').textContent='来源：CSV导入；'+D.c.length+'根K线。';
 }
 
 function analyze(){
- if(!D){$('src').textContent='请先获取行情';return}
+ if(!D)return;
  const {o,h,l,c,v}=D,n=c.length,S=SYM[$('symbol').value],f=x=>fmt(x,S.d);
  if(n<40)return;
  const e20=ema(c,20),e50=ema(c,50);
@@ -215,22 +239,18 @@ function analyze(){
   delta[i]=buy[i]-sell[i];
  }
  const d5=delta.slice(-5).reduce((a,b)=>a+b,0);
- const d20=delta.slice(-20).reduce((a,b)=>a+b,0);
  const dd=d5>0?1:d5<0?-1:0;
  const score=st*2+em+(sw?sw.dir*2:0)+dd;
  const sig=score>=3?1:score<=-3?-1:0;
- $('trend').innerHTML='<span class="'+cls(st||em)+'">'+(st>0?'上升 HH/HL':st<0?'下降 LH/LL':'区间/转换')+'</span>';
- $('liq').innerHTML=sw?'<span class="'+cls(sw.dir)+'">'+(sw.dir>0?'扫下方流动性':'扫上方流动性')+'</span>':'无近期扫单';
- $('delta').innerHTML='<span class="'+cls(dd)+'">'+(dd>0?'买方估算主导':dd<0?'卖方估算主导':'Delta持平')+'</span>';
- $('signal').innerHTML='<span class="'+cls(sig)+'">'+(sig>0?'BUY偏多':sig<0?'SELL偏空':'WAIT观望')+'</span>';
+ $('trend').textContent=st>0?'上升 HH/HL':st<0?'下降 LH/LL':'区间/转换';
+ $('liq').textContent=sw?(sw.dir>0?'扫下方流动性':'扫上方流动性'):'无近期扫单';
+ $('delta').textContent=dd>0?'买方估算主导':dd<0?'卖方估算主导':'Delta持平';
+ $('signal').textContent=sig>0?'BUY偏多':sig<0?'SELL偏空':'WAIT观望';
  $('sc').textContent=score;
  $('sbar').style.background=sig>0?'var(--g)':sig<0?'var(--r)':'var(--y)';
  $('sbar').style.left=(score>=0?50:50+score/6*50)+'%';
  $('sbar').style.width=Math.min(50,Math.abs(score)/6*50)+'%';
- const tags=['EMA20 '+(em>0?'>':em<0?'<':'=')+' EMA50','ATR '+f(atr),'20根Delta估算 '+Math.round(d20),'来源 '+D.src];
- if(sw)tags.push('疑似扫单 '+(n-1-sw.j)+'根前');
- $('tags').innerHTML=tags.map(t=>'<span class="tag">'+t+'</span>').join('');
-
+ $('tags').textContent='EMA20 '+(em>0?'>':em<0?'<':'=')+' EMA50 · ATR '+f(atr)+' · 近5根Delta估算 '+Math.round(d5);
  const lo=Math.min(...l.slice(-20)),hi=Math.max(...h.slice(-20)),N=10,step=(hi-lo)/N||1e-9;
  const bins=Array.from({length:N},()=>({b:0,s:0}));
  for(let i=n-20;i<n;i++){
@@ -241,29 +261,24 @@ function analyze(){
    bins[k].s+=sell[i]*overlap/rg;
   }
  }
- const totals=bins.map(x=>x.b+x.s),poc=totals.indexOf(Math.max(...totals));
- const md=Math.max(1,...bins.map(x=>Math.abs(x.b-x.s)));
  $('foot').innerHTML=bins.map((x,k)=>{
   const d=x.b-x.s;
-  const state=x.b>=2.5*Math.max(x.s,1e-9)?'<span class="g">买方估算失衡</span>':x.s>=2.5*Math.max(x.b,1e-9)?'<span class="r">卖方估算失衡</span>':'—';
-  return '<tr'+(k===poc?' style="color:var(--y)"':'')+'><td>'+f(lo+k*step)+'–'+f(lo+(k+1)*step)+(k===poc?' POC':'')+'</td><td>'+Math.round(x.b)+'</td><td>'+Math.round(x.s)+'</td><td class="'+cls(d)+'">'+Math.round(d)+'<span style="display:inline-block;width:'+Math.round(Math.abs(d)/md*35)+'px;height:5px;background:currentColor"></span></td><td>'+state+'</td></tr>';
+  return '<tr><td>'+f(lo+k*step)+'–'+f(lo+(k+1)*step)+'</td><td>'+Math.round(x.b)+'</td><td>'+Math.round(x.s)+'</td><td class="'+cls(d)+'">'+Math.round(d)+'</td><td>估算</td></tr>';
  }).reverse().join('');
-
  PLAN=null;
  if(sig!==0&&atr>0){
   let stop=sw&&sw.dir===sig?sw.x-sig*atr*.3:c[n-1]-sig*atr*1.5;
   if(Math.abs(c[n-1]-stop)<atr*.8)stop=c[n-1]-sig*atr*.8;
   const R=Math.abs(c[n-1]-stop);
   PLAN={entry:c[n-1],sl:stop,tp1:c[n-1]+sig*R*1.5,tp2:c[n-1]+sig*R*3};
-  ['entry','sl','tp1','tp2'].forEach((k,i)=>$(k).textContent=f([PLAN.entry,PLAN.sl,PLAN.tp1,PLAN.tp2][i]));
-  $('ein').value=PLAN.entry.toFixed(S.d);
-  $('sin').value=PLAN.sl.toFixed(S.d);
-  $('reason').textContent='技术规则评分达到阈值。请先确认更高周期趋势、新闻风险、点差与止损距离。';
+  $('entry').textContent=f(PLAN.entry);$('sl').textContent=f(PLAN.sl);$('tp1').textContent=f(PLAN.tp1);$('tp2').textContent=f(PLAN.tp2);
+  $('ein').value=PLAN.entry.toFixed(S.d);$('sin').value=PLAN.sl.toFixed(S.d);
+  $('reason').textContent='规则评分达到阈值；交易前核对点差、新闻和止损距离。';
  }else{
   ['entry','sl','tp1','tp2'].forEach(k=>$(k).textContent='—');
   $('reason').textContent='评分未达到信号阈值，暂时观望。';
  }
- draw({o,h,l,c,e20,e50,sh,sl,sw});
+ draw({o,h,l,c,e20,e50,sh,sl});
  riskCalc();
 }
 
@@ -271,34 +286,22 @@ function draw(P){
  const cv=$('cv'),w=cv.clientWidth||320,hh=300,dpr=window.devicePixelRatio||1;
  cv.width=w*dpr;cv.height=hh*dpr;
  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
- const cs=getComputedStyle(document.documentElement);
- const G=cs.getPropertyValue('--g').trim(),R=cs.getPropertyValue('--r').trim(),Y=cs.getPropertyValue('--y').trim(),A=cs.getPropertyValue('--acc').trim(),M=cs.getPropertyValue('--mut').trim(),BD=cs.getPropertyValue('--bd').trim();
+ const css=getComputedStyle(document.documentElement);
+ const G=css.getPropertyValue('--g').trim(),R=css.getPropertyValue('--r').trim(),Y=css.getPropertyValue('--y').trim(),A=css.getPropertyValue('--acc').trim(),M=css.getPropertyValue('--mut').trim(),BD=css.getPropertyValue('--bd').trim();
  const n=P.c.length,V=Math.min(70,n),s0=n-V,pr=48;
  let mn=Math.min(...P.l.slice(s0)),mx=Math.max(...P.h.slice(s0));
- if(PLAN){mn=Math.min(mn,PLAN.sl,PLAN.tp2);mx=Math.max(mx,PLAN.sl,PLAN.tp2)}
  const pad=(mx-mn)*.07||1e-6;mn-=pad;mx+=pad;
  const py=p=>hh-8-(p-mn)/(mx-mn)*(hh-16),cw=(w-pr)/V,px=i=>(i-s0+.5)*cw;
  x.font='10px Arial';x.fillStyle=M;x.strokeStyle=BD;
  for(let k=0;k<=4;k++){const p=mn+(mx-mn)*k/4,y=py(p);x.beginPath();x.moveTo(0,y);x.lineTo(w-pr,y);x.stroke();x.fillText(p.toFixed(SYM[$('symbol').value].d),w-pr+2,y+3)}
  for(let i=s0;i<n;i++){
   const up=P.c[i]>=P.o[i],col=up?G:R;
-  x.strokeStyle=col;x.fillStyle=col;
-  x.beginPath();x.moveTo(px(i),py(P.h[i]));x.lineTo(px(i),py(P.l[i]));x.stroke();
+  x.strokeStyle=col;x.fillStyle=col;x.beginPath();x.moveTo(px(i),py(P.h[i]));x.lineTo(px(i),py(P.l[i]));x.stroke();
   const top=py(Math.max(P.o[i],P.c[i])),bot=py(Math.min(P.o[i],P.c[i]));
   x.fillRect(px(i)-Math.max(1,cw*.3),top,Math.max(2,cw*.6),Math.max(1,bot-top));
  }
  function line(a,col){x.strokeStyle=col;x.lineWidth=1.3;x.beginPath();for(let i=s0;i<n;i++)i===s0?x.moveTo(px(i),py(a[i])):x.lineTo(px(i),py(a[i]));x.stroke()}
  line(P.e20,Y);line(P.e50,A);
- x.font='11px Arial';
- P.sh.filter(z=>z.i>=s0).forEach(z=>{x.fillStyle=R;x.fillText('▼',px(z.i)-4,py(z.p)-4)});
- P.sl.filter(z=>z.i>=s0).forEach(z=>{x.fillStyle=G;x.fillText('▲',px(z.i)-4,py(z.p)+12)});
- if(P.sw){x.fillStyle=Y;x.fillText('◆',px(P.sw.j)-5,py(P.sw.x));}
- if(PLAN){
-  [['E',PLAN.entry,A],['SL',PLAN.sl,R],['T1',PLAN.tp1,G],['T2',PLAN.tp2,G]].forEach(a=>{
-   x.setLineDash([5,4]);x.strokeStyle=a[2];x.beginPath();x.moveTo(0,py(a[1]));x.lineTo(w-pr,py(a[1]));x.stroke();x.setLineDash([]);
-   x.fillStyle=a[2];x.fillText(a[0],4,py(a[1])-3);
-  });
- }
 }
 
 function riskCalc(){
@@ -311,14 +314,40 @@ function riskCalc(){
   $('rw').textContent='请填写入场价和止损价。';return;
  }
  const points=Math.abs(e-s)/S.pip;
- let pipValue;
- if($('symbol').value==='USD/JPY')pipValue=1000/e;
- else pipValue=10;
+ const pipValue=$('symbol').value==='USD/JPY'?1000/e:10;
  const lots=Math.floor(amount/(points*pipValue)*100)/100;
- $('r2').textContent=points.toFixed(1);
- $('r3').textContent=lots.toFixed(2);
- $('r4').textContent='$'+pipValue.toFixed(2);
- $('rw').textContent=lots<.01?'计算手数低于0.01手，请核对最小手数。':'手数为估算值；黄金、JPY交叉换算和券商合约规格可能造成偏差。';
+ $('r2').textContent=points.toFixed(1);$('r3').textContent=lots.toFixed(2);$('r4').textContent='$'+pipValue.toFixed(2);
+ $('rw').textContent=lots<.01?'计算手数低于0.01手，请核对最小手数。':'手数为估算值，请核对券商合约规格。';
+}
+
+async function runGeminiAnalysis(){
+ const btn=$('aiBtn'),status=$('aiStatus'),result=$('aiResult');
+ btn.disabled=true;status.textContent='正在请求 Gemini AI...';result.textContent='';
+ try{
+  const symbol=$('symbol').value,tf=$('tf').value;
+  const price=D&&D.c.length?D.c[D.c.length-1]:null;
+  const payload={
+   symbol,timeframe:tf,price,
+   direction:$('aiDirection').value,
+   structure:$('aiStructure').value,
+   technicalSignal:$('signal').textContent,
+   trend:$('trend').textContent,
+   liquidity:$('liq').textContent,
+   delta:$('delta').textContent
+  };
+  const response=await fetch('/api/analyze',{
+   method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(payload)
+  });
+  const data=await response.json();
+  if(!response.ok||!data.success)throw Error(data.details||data.error||'AI请求失败');
+  status.textContent='Gemini AI 分析成功 · '+data.model;
+  result.textContent=data.analysis;
+ }catch(error){
+  status.textContent='AI分析失败';
+  result.textContent=error.message;
+ }finally{btn.disabled=false}
 }
 
 $('symbol').addEventListener('change',()=>{D=null;PLAN=null;loadMarket()});
