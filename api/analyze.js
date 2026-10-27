@@ -15,7 +15,8 @@ export default async function handler(req, res) {
   if (!apiKey) {
     return res.status(500).json({
       success: false,
-      error: "服务器未配置 GEMINI_API_KEY，请检查 Vercel 环境变量"
+      error: "缺少 GEMINI_API_KEY",
+      details: "请在 Vercel 项目的 Environment Variables 中检查变量名称，并重新部署。"
     });
   }
 
@@ -32,8 +33,8 @@ export default async function handler(req, res) {
     const structure = String(body.structure || "未指定");
 
     const prompt = `
-你是一名专业外汇市场分析助手。
-请使用中文分析以下市场信息，不要编造实时行情。
+你是一名专业的外汇与黄金市场分析助手，请使用中文分析。
+不要编造实时行情，不要保证盈利。
 
 交易品种：${symbol}
 当前价格：${price}
@@ -43,13 +44,13 @@ export default async function handler(req, res) {
 请按以下格式回答：
 1. 市场方向判断
 2. 市场结构分析
-3. 关键支撑与阻力（若无数据，明确说明）
-4. 多头与空头的确认条件
-5. 风险控制建议
-6. 当前操作建议：观察、等待确认或暂不交易
+3. 关键支撑与阻力；没有数据时明确说明
+4. 多头确认条件
+5. 空头确认条件
+6. 风险控制建议
+7. 当前建议：观察、等待确认或暂不交易
 
-不要保证盈利，不要声称能够确定未来价格。
-如果数据不足，请明确指出。
+说明数据限制，不得把推测当作确定事实。
 `;
 
     const response = await fetch(
@@ -78,23 +79,27 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status >= 500 ? 502 : 400).json({
+      return res.status(200).json({
         success: false,
         error: "Gemini API 请求失败",
-        details: data.error?.message || `HTTP ${response.status}`
+        details: data.error?.message || `HTTP ${response.status}`,
+        upstreamStatus: response.status
       });
     }
 
-    const text =
-      data.candidates?.[0]?.content?.parts
-        ?.map(part => part.text || "")
-        .join("") || "";
+    const analysis = data.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || "")
+      .join("")
+      .trim();
 
-    if (!text) {
-      return res.status(502).json({
+    if (!analysis) {
+      return res.status(200).json({
         success: false,
         error: "Gemini 没有返回分析内容",
-        details: data.promptFeedback?.blockReason || "响应内容为空"
+        details:
+          data.promptFeedback?.blockReason ||
+          data.candidates?.[0]?.finishReason ||
+          "API 响应内容为空"
       });
     }
 
@@ -102,11 +107,12 @@ export default async function handler(req, res) {
       success: true,
       symbol,
       price,
-      analysis: text,
+      analysis,
       model: "gemini-2.5-flash"
     });
+
   } catch (error) {
-    return res.status(500).json({
+    return res.status(200).json({
       success: false,
       error: "服务器调用 Gemini 失败",
       details: error.message || "未知错误"
