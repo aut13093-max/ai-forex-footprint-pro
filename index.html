@@ -3,357 +3,276 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Forex Footprint PRO</title>
 <style>
-:root{--bg:#0b1020;--card:#121b30;--bd:#263650;--tx:#e7edf8;--mut:#9aabc5;--acc:#60d8ff;--g:#35d49a;--r:#ff697d;--y:#ffd166}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:14px Arial,sans-serif}
-header,.card{padding:14px;background:var(--card);border:1px solid var(--bd);border-radius:12px;margin:10px}
-header h1{font-size:20px;color:var(--acc);margin:0 0 8px}
+body{margin:0;padding:16px;background:#0b1220;color:#e5edf8;font-family:Arial,sans-serif}
 main{max-width:1000px;margin:auto}
-h2{font-size:15px}
-.row,.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
-label,.sm,small{font-size:12px;color:var(--mut)}
-label{display:block;margin:8px 0}
-input,select,button,textarea{width:100%;padding:11px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
-button{background:#087ea4;color:white;font-weight:bold;margin-top:8px}
-button:disabled{opacity:.55}
-textarea{height:100px}
-.m{background:var(--bg);padding:10px;border-radius:8px;overflow-wrap:anywhere}
-.v{font-size:17px;font-weight:bold;margin-top:6px}
-.g{color:var(--g)}.r{color:var(--r)}.y{color:var(--y)}
-canvas{width:100%;height:300px;display:block;background:var(--bg)}
-.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-td,th{padding:7px 4px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap}
-td:first-child,th:first-child{text-align:left}
-.tag{display:inline-block;padding:4px 7px;border:1px solid var(--bd);border-radius:8px;margin:3px;font-size:12px}
-.status{padding:9px;background:var(--bg);overflow-wrap:anywhere}
-.score{height:8px;background:var(--bg);margin:10px 0;position:relative}
-#sbar{height:8px;position:absolute}
-@media(min-width:650px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+h1{font-size:25px;color:#60a5fa}
+h2{font-size:18px;color:#93c5fd}
+.card{background:#151f30;border:1px solid #29384d;border-radius:12px;padding:15px;margin:14px 0}
+input,select,button{padding:11px;border-radius:7px;border:1px solid #42536b;background:#0b1220;color:white;margin:4px;max-width:100%}
+button{background:#2563eb;border:0;font-weight:bold;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.metric{background:#0b1220;border-radius:8px;padding:12px}
+.metric strong{display:block;font-size:20px;margin-top:7px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 5px;border-bottom:1px solid #334155;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.green{color:#4ade80}.red{color:#f87171}.muted{color:#94a3b8}
+canvas{width:100%;height:220px;background:#0b1220;border-radius:8px}
 </style>
 </head>
 <body>
-<header>
-<h1>AI FOREX FOOTPRINT PRO</h1>
-<div class="sm">行情分析 · 市场结构 · 流动性 · Delta估算 · Gemini AI · 风险管理</div>
-</header>
-
 <main>
+<h1>AI Forex Footprint PRO</h1>
+<p class="muted">外汇波段分析 · Footprint估算 · 风险控制 · 不自动下单</p>
+
 <section class="card">
 <h2>① 行情设置</h2>
-<div class="row">
-<div><label>交易品种</label><select id="symbol">
-<option>EUR/USD</option><option>GBP/USD</option><option>USD/JPY</option><option>XAU/USD</option><option>AUD/USD</option>
-</select></div>
-<div><label>时间周期</label><select id="tf">
-<option>M15</option><option selected>H1</option><option>H4</option><option>D1</option>
-</select></div>
-</div>
-<button id="loadBtn" onclick="loadMarket()">获取真实行情并分析</button>
-<div id="src" class="status sm">等待加载行情</div>
-<details>
-<summary class="sm">导入 CSV K线</summary>
-<p class="sm">格式：时间,开,高,低,收,成交量；至少40行。</p>
-<textarea id="csv" placeholder="2026-10-27 08:00,1.0850,1.0862,1.0841,1.0858,1520"></textarea>
-<button onclick="importCsv()">导入并分析</button>
-</details>
-</section>
-
-<section class="card">
-<h2>② K线图</h2>
-<canvas id="cv"></canvas>
-<p class="sm">黄线EMA20，蓝线EMA50；▲▼为摆动点。流动性扫单为规则识别。外汇Delta为估算值，并非真实订单流。</p>
-</section>
-
-<section class="card">
-<h2>③ 市场结构与信号</h2>
 <div class="grid">
-<div class="m"><small>趋势结构</small><div class="v" id="trend">—</div></div>
-<div class="m"><small>流动性</small><div class="v" id="liq">—</div></div>
-<div class="m"><small>近5根Delta估算</small><div class="v" id="delta">—</div></div>
-<div class="m"><small>交易信号</small><div class="v" id="signal">WAIT</div></div>
+<div>
+<label>交易品种</label><br>
+<select id="symbol">
+<option>EUR/USD</option><option>GBP/USD</option>
+<option>USD/JPY</option><option>AUD/USD</option>
+<option>XAU/USD</option>
+</select>
 </div>
-<div class="score"><div id="sbar"></div></div>
-<p class="sm">综合评分：<b id="sc">0</b>（≥3偏多，≤−3偏空，否则观望）</p>
-<div id="tags"></div>
+<div>
+<label>周期</label><br>
+<select id="interval">
+<option>M15</option><option>H1</option><option>H4</option><option>D1</option>
+</select>
+</div>
+<div>
+<label>初始资金（美元）</label><br>
+<input id="capital" type="number" value="1000">
+</div>
+<div>
+<label>单笔风险（%）</label><br>
+<input id="risk" type="number" value="1" min="0.1" max="2" step="0.1">
+</div>
+</div>
+<button onclick="loadMarket()">获取行情并分析</button>
+<p id="status" class="muted">等待获取行情。</p>
 </section>
 
 <section class="card">
-<h2>④ Footprint价格区间（估算）</h2>
-<div class="scroll"><table>
-<thead><tr><th>价格区间</th><th>买量估算</th><th>卖量估算</th><th>Delta估算</th><th>状态</th></tr></thead>
-<tbody id="foot"><tr><td colspan="5">等待行情</td></tr></tbody>
-</table></div>
-<p class="sm">现货外汇没有统一的全球成交量。此处按K线方向估算买卖分配，不是真实Footprint或真实买卖成交量。</p>
-</section>
-
-<section class="card">
-<h2>⑤ 交易计划</h2>
+<h2>② 市场分析</h2>
 <div class="grid">
-<div class="m"><small>入场参考</small><div class="v" id="entry">—</div></div>
-<div class="m"><small>止损参考</small><div class="v" id="sl">—</div></div>
-<div class="m"><small>目标1（1.5R）</small><div class="v" id="tp1">—</div></div>
-<div class="m"><small>目标2（3R）</small><div class="v" id="tp2">—</div></div>
+<div class="metric">最新价格<strong id="price">--</strong></div>
+<div class="metric">EMA20<strong id="ema20">--</strong></div>
+<div class="metric">EMA50<strong id="ema50">--</strong></div>
+<div class="metric">趋势判断<strong id="trend">--</strong></div>
+<div class="metric">近20根估算 Delta<strong id="totalDelta">--</strong></div>
+<div class="metric">估算信号<strong id="signal">--</strong></div>
 </div>
-<p id="reason" class="sm">等待行情</p>
 </section>
 
 <section class="card">
-<h2>⑥ 仓位计算</h2>
-<div class="row">
-<div><label>账户资金（美元）</label><input id="capital" type="number" value="1000"></div>
-<div><label>风险比例（%）</label><input id="risk" type="number" value="1" step=".1"></div>
-<div><label>入场价</label><input id="ein" type="number" step="any"></div>
-<div><label>止损价</label><input id="sin" type="number" step="any"></div>
-</div>
-<button onclick="riskCalc()">计算手数</button>
+<h2>③ Footprint 估算买卖量</h2>
+<p class="muted">绿色代表估算买入量，红色代表估算卖出量。并非真实逐笔成交数据。</p>
+<canvas id="fpCanvas" width="900" height="220"></canvas>
 <div class="grid">
-<div class="m"><small>风险金额</small><div class="v" id="r1">—</div></div>
-<div class="m"><small>止损点数</small><div class="v" id="r2">—</div></div>
-<div class="m"><small>建议手数</small><div class="v" id="r3">—</div></div>
-<div class="m"><small>每标准手每点价值</small><div class="v" id="r4">—</div></div>
+<div class="metric">估算买入量<strong id="buyTotal">--</strong></div>
+<div class="metric">估算卖出量<strong id="sellTotal">--</strong></div>
+<div class="metric">Delta<strong id="deltaValue">--</strong></div>
 </div>
-<p id="rw" class="sm"></p>
-<p class="sm">手数为估算值。不同券商的合约大小、最小手数和账户币种可能不同，请核对合约规格。</p>
 </section>
 
 <section class="card">
-<h2>⑦ Gemini AI 市场分析</h2>
-<div class="row">
-<div><label>市场方向</label><select id="aiDirection">
-<option value="上涨趋势">上涨趋势</option>
-<option value="下跌趋势">下跌趋势</option>
-<option value="震荡市场">震荡市场</option>
-</select></div>
-<div><label>市场结构</label><select id="aiStructure">
-<option value="趋势回调">趋势回调</option>
-<option value="突破">突破</option>
-<option value="流动性扫单">流动性扫单</option>
-<option value="区间震荡">区间震荡</option>
-</select></div>
+<h2>④ Footprint 价格区间表</h2>
+<div class="wrap">
+<table>
+<thead><tr><th>价格区间</th><th>估算买量</th><th>估算卖量</th><th>Delta</th><th>判断</th></tr></thead>
+<tbody id="foot">
+<tr><td colspan="5">获取行情后显示</td></tr>
+</tbody>
+</table>
 </div>
-<button id="aiBtn" onclick="runGeminiAnalysis()">调用 Gemini AI 分析</button>
-<div id="aiStatus" class="status sm">等待分析</div>
-<div id="aiResult" class="m" style="white-space:pre-wrap;margin-top:10px">尚未生成 AI 分析。</div>
-<p class="sm">AI只会分析传入的数据，不自动读取新闻，不保证盈利，不自动下单。</p>
 </section>
 
-<section class="card sm">不连接实盘、不自动下单。分析结果仅供参考，不构成投资建议。</section>
+<section class="card">
+<h2>⑤ 交易计划与仓位风险</h2>
+<div class="grid">
+<div><label>计划入场价</label><br><input id="entry" type="number" step="any"></div>
+<div><label>止损价</label><br><input id="sl" type="number" step="any"></div>
+<div><label>止盈价</label><br><input id="tp" type="number" step="any"></div>
+</div>
+<button onclick="calcRisk()">计算风险</button>
+<p id="riskResult">输入入场价和止损价后计算。</p>
+</section>
+
+<section class="card">
+<h2>⑥ Gemini AI 分析</h2>
+<button onclick="aiAnalyze()">分析当前市场</button>
+<p id="aiResult">等待分析。</p>
+</section>
+
+<p class="muted">风险提示：技术信号不保证盈利。外汇成交量及 Delta 为估算值，请先模拟交易。此页面不会自动下单。</p>
 </main>
 
 <script>
-'use strict';
-const $=id=>document.getElementById(id);
-const SYM={
-'EUR/USD':{pip:.0001,d:5},
-'GBP/USD':{pip:.0001,d:5},
-'AUD/USD':{pip:.0001,d:5},
-'USD/JPY':{pip:.01,d:3},
-'XAU/USD':{pip:.1,d:2}
-};
-let D=null,PLAN=null;
-const fmt=(x,d)=>Number.isFinite(x)?x.toFixed(d):'—';
-const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
-const ema=(a,n)=>{let e=a[0],k=2/(n+1);return a.map(x=>e=x*k+e*(1-k))};
-const cls=x=>x>0?'g':x<0?'r':'y';
+let candles=[];
+let lastAnalysis=null;
 
 async function loadMarket(){
- const btn=$('loadBtn');
- btn.disabled=true;
- $('src').textContent='正在请求行情...';
+ const status=document.getElementById('status');
+ status.textContent='正在获取行情...';
  try{
-  const symbol=$('symbol').value,tf=$('tf').value;
-  const res=await fetch('/api/quote?symbol='+encodeURIComponent(symbol)+'&timeframe='+encodeURIComponent(tf),{cache:'no-store'});
+  const symbol=document.getElementById('symbol').value;
+  const interval=document.getElementById('interval').value;
+  const res=await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}`);
   const data=await res.json();
-  if(!res.ok)throw Error(data.details||data.error||'HTTP '+res.status);
-  for(const k of ['o','h','l','c','v']){
-   if(!Array.isArray(data[k]))throw Error('API缺少数组：'+k);
-  }
-  const n=Math.min(...['o','h','l','c','v'].map(k=>data[k].length));
-  if(n<40)throw Error('K线少于40根');
-  const start=Math.max(0,n-140),d={};
-  for(const k of ['o','h','l','c','v'])d[k]=data[k].slice(start,n).map(Number);
-  for(let i=0;i<d.c.length;i++){
-   if(![d.o[i],d.h[i],d.l[i],d.c[i],d.v[i]].every(Number.isFinite))throw Error('行情包含无效数字');
-   if(d.h[i]<Math.max(d.o[i],d.c[i],d.l[i])||d.l[i]>Math.min(d.o[i],d.c[i],d.h[i]))throw Error('K线高低价异常');
-  }
-  D={...d,src:'API行情'};
+  if(!res.ok) throw new Error(data.error||data.message||'行情请求失败');
+  candles=data.values||data.data||[];
+  if(candles.length<20) throw new Error('行情数据不足，至少需要20根K线');
+  candles=candles.map(x=>({
+   o:Number(x.open),h:Number(x.high),l:Number(x.low),
+   c:Number(x.close),v:Number(x.volume)||1,
+   time:x.datetime||x.time||''
+  })).filter(x=>[x.o,x.h,x.l,x.c].every(Number.isFinite));
+  if(candles.length<20) throw new Error('行情数据格式不正确');
   analyze();
-  $('src').textContent='来源：API行情；'+D.c.length+'根K线。';
+  status.textContent='行情获取成功，共 '+candles.length+' 根K线。';
  }catch(e){
-  $('src').textContent='行情获取失败：'+e.message;
- }finally{btn.disabled=false}
+  status.textContent='行情获取失败：'+e.message;
+ }
 }
 
-function importCsv(){
- const rows=[];
- for(const line of $('csv').value.trim().split(/\r?\n/)){
-  const a=line.split(/[,\t;]/).map(x=>x.trim());
-  if(a.length<6)continue;
-  const [o,h,l,c,v]=a.slice(-5).map(Number);
-  if([o,h,l,c,v].every(Number.isFinite)&&h>=Math.max(o,c,l)&&l<=Math.min(o,c,h)&&v>=0)rows.push({o,h,l,c,v});
- }
- if(rows.length<40){alert('有效K线不足40行，请检查CSV格式');return}
- const R=rows.slice(-140);
- D={o:R.map(x=>x.o),h:R.map(x=>x.h),l:R.map(x=>x.l),c:R.map(x=>x.c),v:R.map(x=>x.v),src:'CSV导入'};
- analyze();
- $('src').textContent='来源：CSV导入；'+D.c.length+'根K线。';
+function ema(values,period){
+ const k=2/(period+1);
+ let out=[],prev=values[0];
+ values.forEach((v,i)=>{
+  prev=i===0?v:v*k+prev*(1-k);
+  out.push(prev);
+ });
+ return out;
 }
 
 function analyze(){
- if(!D)return;
- const {o,h,l,c,v}=D,n=c.length,S=SYM[$('symbol').value],f=x=>fmt(x,S.d);
- if(n<40)return;
+ const c=candles.map(x=>x.c);
  const e20=ema(c,20),e50=ema(c,50);
- const tr=[];
- for(let i=1;i<n;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));
- const atr=avg(tr.slice(-14));
- const sh=[],sl=[];
- for(let i=3;i<n-3;i++){
-  let H=true,L=true;
-  for(let k=1;k<=3;k++){if(h[i]<=h[i-k]||h[i]<=h[i+k])H=false;if(l[i]>=l[i-k]||l[i]>=l[i+k])L=false}
-  if(H)sh.push({i,p:h[i]});
-  if(L)sl.push({i,p:l[i]});
- }
- const H=sh.slice(-2),L=sl.slice(-2);
- let st=0;
- if(H.length===2&&L.length===2){
-  if(H[1].p>H[0].p&&L[1].p>L[0].p)st=1;
-  else if(H[1].p<H[0].p&&L[1].p<L[0].p)st=-1;
- }
- const em=e20[n-1]>e50[n-1]?1:e20[n-1]<e50[n-1]?-1:0;
- let sw=null;
- for(let j=n-1;j>=Math.max(3,n-8);j--){
-  const ph=sh.filter(x=>x.i<j).at(-1),pl=sl.filter(x=>x.i<j).at(-1);
-  if(ph&&h[j]>ph.p&&c[j]<ph.p){sw={j,p:ph.p,x:h[j],dir:-1};break}
-  if(pl&&l[j]<pl.p&&c[j]>pl.p){sw={j,p:pl.p,x:l[j],dir:1};break}
- }
- const buy=[],sell=[],delta=[];
- for(let i=0;i<n;i++){
-  const rg=Math.max(h[i]-l[i],1e-12),ratio=Math.max(-1,Math.min(1,(c[i]-o[i])/rg));
-  buy[i]=v[i]*(.5+.5*ratio);
-  sell[i]=v[i]*(.5-.5*ratio);
-  delta[i]=buy[i]-sell[i];
- }
- const d5=delta.slice(-5).reduce((a,b)=>a+b,0);
- const dd=d5>0?1:d5<0?-1:0;
- const score=st*2+em+(sw?sw.dir*2:0)+dd;
- const sig=score>=3?1:score<=-3?-1:0;
- $('trend').textContent=st>0?'上升 HH/HL':st<0?'下降 LH/LL':'区间/转换';
- $('liq').textContent=sw?(sw.dir>0?'扫下方流动性':'扫上方流动性'):'无近期扫单';
- $('delta').textContent=dd>0?'买方估算主导':dd<0?'卖方估算主导':'Delta持平';
- $('signal').textContent=sig>0?'BUY偏多':sig<0?'SELL偏空':'WAIT观望';
- $('sc').textContent=score;
- $('sbar').style.background=sig>0?'var(--g)':sig<0?'var(--r)':'var(--y)';
- $('sbar').style.left=(score>=0?50:50+score/6*50)+'%';
- $('sbar').style.width=Math.min(50,Math.abs(score)/6*50)+'%';
- $('tags').textContent='EMA20 '+(em>0?'>':em<0?'<':'=')+' EMA50 · ATR '+f(atr)+' · 近5根Delta估算 '+Math.round(d5);
- const lo=Math.min(...l.slice(-20)),hi=Math.max(...h.slice(-20)),N=10,step=(hi-lo)/N||1e-9;
- const bins=Array.from({length:N},()=>({b:0,s:0}));
- for(let i=n-20;i<n;i++){
-  const rg=h[i]-l[i]||1e-9;
-  for(let k=0;k<N;k++){
-   const overlap=Math.max(0,Math.min(lo+(k+1)*step,h[i])-Math.max(lo+k*step,l[i]));
-   bins[k].b+=buy[i]*overlap/rg;
-   bins[k].s+=sell[i]*overlap/rg;
-  }
- }
- $('foot').innerHTML=bins.map((x,k)=>{
-  const d=x.b-x.s;
-  return '<tr><td>'+f(lo+k*step)+'–'+f(lo+(k+1)*step)+'</td><td>'+Math.round(x.b)+'</td><td>'+Math.round(x.s)+'</td><td class="'+cls(d)+'">'+Math.round(d)+'</td><td>估算</td></tr>';
- }).reverse().join('');
- PLAN=null;
- if(sig!==0&&atr>0){
-  let stop=sw&&sw.dir===sig?sw.x-sig*atr*.3:c[n-1]-sig*atr*1.5;
-  if(Math.abs(c[n-1]-stop)<atr*.8)stop=c[n-1]-sig*atr*.8;
-  const R=Math.abs(c[n-1]-stop);
-  PLAN={entry:c[n-1],sl:stop,tp1:c[n-1]+sig*R*1.5,tp2:c[n-1]+sig*R*3};
-  $('entry').textContent=f(PLAN.entry);$('sl').textContent=f(PLAN.sl);$('tp1').textContent=f(PLAN.tp1);$('tp2').textContent=f(PLAN.tp2);
-  $('ein').value=PLAN.entry.toFixed(S.d);$('sin').value=PLAN.sl.toFixed(S.d);
-  $('reason').textContent='规则评分达到阈值；交易前核对点差、新闻和止损距离。';
- }else{
-  ['entry','sl','tp1','tp2'].forEach(k=>$(k).textContent='—');
-  $('reason').textContent='评分未达到信号阈值，暂时观望。';
- }
- draw({o,h,l,c,e20,e50,sh,sl});
- riskCalc();
+ const last=candles[candles.length-1];
+ const trend=e20.at(-1)>e50.at(-1)?'偏多':'偏空';
+ document.getElementById('price').textContent=last.c;
+ document.getElementById('ema20').textContent=e20.at(-1).toFixed(5);
+ document.getElementById('ema50').textContent=e50.at(-1).toFixed(5);
+ document.getElementById('trend').textContent=trend;
+
+ const recent=candles.slice(-20);
+ let buy=0,sell=0;
+ recent.forEach(x=>{
+  const range=Math.max(x.h-x.l,1e-10);
+  const ratio=Math.max(-1,Math.min(1,(x.c-x.o)/range));
+  buy+=x.v*(.5+.5*ratio);
+  sell+=x.v*(.5-.5*ratio);
+ });
+ const delta=buy-sell;
+ document.getElementById('buyTotal').textContent=buy.toFixed(2);
+ document.getElementById('sellTotal').textContent=sell.toFixed(2);
+ document.getElementById('deltaValue').textContent=delta.toFixed(2);
+ document.getElementById('totalDelta').textContent=delta.toFixed(2);
+ document.getElementById('signal').textContent=
+  delta>0?'买方估算占优':'卖方估算占优';
+
+ drawBars(recent);
+ buildFootprint(recent);
+ lastAnalysis={symbol:document.getElementById('symbol').value,
+  interval:document.getElementById('interval').value,
+  price:last.c,trend,buy,sell,delta};
 }
 
-function draw(P){
- const cv=$('cv'),w=cv.clientWidth||320,hh=300,dpr=window.devicePixelRatio||1;
- cv.width=w*dpr;cv.height=hh*dpr;
- const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);
- const css=getComputedStyle(document.documentElement);
- const G=css.getPropertyValue('--g').trim(),R=css.getPropertyValue('--r').trim(),Y=css.getPropertyValue('--y').trim(),A=css.getPropertyValue('--acc').trim(),M=css.getPropertyValue('--mut').trim(),BD=css.getPropertyValue('--bd').trim();
- const n=P.c.length,V=Math.min(70,n),s0=n-V,pr=48;
- let mn=Math.min(...P.l.slice(s0)),mx=Math.max(...P.h.slice(s0));
- const pad=(mx-mn)*.07||1e-6;mn-=pad;mx+=pad;
- const py=p=>hh-8-(p-mn)/(mx-mn)*(hh-16),cw=(w-pr)/V,px=i=>(i-s0+.5)*cw;
- x.font='10px Arial';x.fillStyle=M;x.strokeStyle=BD;
- for(let k=0;k<=4;k++){const p=mn+(mx-mn)*k/4,y=py(p);x.beginPath();x.moveTo(0,y);x.lineTo(w-pr,y);x.stroke();x.fillText(p.toFixed(SYM[$('symbol').value].d),w-pr+2,y+3)}
- for(let i=s0;i<n;i++){
-  const up=P.c[i]>=P.o[i],col=up?G:R;
-  x.strokeStyle=col;x.fillStyle=col;x.beginPath();x.moveTo(px(i),py(P.h[i]));x.lineTo(px(i),py(P.l[i]));x.stroke();
-  const top=py(Math.max(P.o[i],P.c[i])),bot=py(Math.min(P.o[i],P.c[i]));
-  x.fillRect(px(i)-Math.max(1,cw*.3),top,Math.max(2,cw*.6),Math.max(1,bot-top));
- }
- function line(a,col){x.strokeStyle=col;x.lineWidth=1.3;x.beginPath();for(let i=s0;i<n;i++)i===s0?x.moveTo(px(i),py(a[i])):x.lineTo(px(i),py(a[i]));x.stroke()}
- line(P.e20,Y);line(P.e50,A);
+function drawBars(data){
+ const canvas=document.getElementById('fpCanvas');
+ const ctx=canvas.getContext('2d');
+ const w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h);
+ const max=Math.max(...data.map(x=>x.v),1);
+ const gap=3,bw=(w-gap*(data.length+1))/data.length;
+ data.forEach((x,i)=>{
+  const range=Math.max(x.h-x.l,1e-10);
+  const ratio=Math.max(-1,Math.min(1,(x.c-x.o)/range));
+  const b=x.v*(.5+.5*ratio),s=x.v*(.5-.5*ratio);
+  const x0=gap+i*(bw+gap);
+  const bh=(b/max)*(h-30),sh=(s/max)*(h-30);
+  ctx.fillStyle='#22c55e';
+  ctx.fillRect(x0,h-10-bh,bw/2,bh);
+  ctx.fillStyle='#ef4444';
+  ctx.fillRect(x0+bw/2,h-10-sh,bw/2,sh);
+ });
 }
 
-function riskCalc(){
- const S=SYM[$('symbol').value],cap=+$('capital').value,rp=+$('risk').value,e=+$('ein').value,s=+$('sin').value;
- if(!(cap>0&&rp>0&&rp<=100)){$('rw').textContent='请输入有效资金和风险比例。';return}
- const amount=cap*rp/100;
- $('r1').textContent='$'+amount.toFixed(2);
- if(!(e>0&&s>0&&e!==s)){
-  ['r2','r3','r4'].forEach(k=>$(k).textContent='—');
-  $('rw').textContent='请填写入场价和止损价。';return;
- }
- const points=Math.abs(e-s)/S.pip;
- const pipValue=$('symbol').value==='USD/JPY'?1000/e:10;
- const lots=Math.floor(amount/(points*pipValue)*100)/100;
- $('r2').textContent=points.toFixed(1);$('r3').textContent=lots.toFixed(2);$('r4').textContent='$'+pipValue.toFixed(2);
- $('rw').textContent=lots<.01?'计算手数低于0.01手，请核对最小手数。':'手数为估算值，请核对券商合约规格。';
+function buildFootprint(data){
+ const low=Math.min(...data.map(x=>x.l));
+ const high=Math.max(...data.map(x=>x.h));
+ const step=(high-low)/10||0.00001;
+ const bins=Array.from({length:10},(_,i)=>({
+  low:low+i*step,high:low+(i+1)*step,buy:0,sell:0
+ }));
+ data.forEach(x=>{
+  const range=Math.max(x.h-x.l,1e-10);
+  const ratio=Math.max(-1,Math.min(1,(x.c-x.o)/range));
+  const b=x.v*(.5+.5*ratio),s=x.v*(.5-.5*ratio);
+  bins.forEach(bin=>{
+   const overlap=Math.max(0,Math.min(x.h,bin.high)-Math.max(x.l,bin.low));
+   if(overlap>0){
+    const fraction=overlap/range;
+    bin.buy+=b*fraction;
+    bin.sell+=s*fraction;
+   }
+  });
+ });
+ document.getElementById('foot').innerHTML=bins.slice().reverse().map(bin=>{
+  const d=bin.buy-bin.sell;
+  return `<tr>
+  <td>${bin.low.toFixed(5)}–${bin.high.toFixed(5)}</td>
+  <td class="green">${bin.buy.toFixed(2)}</td>
+  <td class="red">${bin.sell.toFixed(2)}</td>
+  <td>${d.toFixed(2)}</td>
+  <td class="${d>=0?'green':'red'}">${d>=0?'买方估算占优':'卖方估算占优'}</td>
+  </tr>`;
+ }).join('');
 }
 
-async function runGeminiAnalysis(){
- const btn=$('aiBtn'),status=$('aiStatus'),result=$('aiResult');
- btn.disabled=true;status.textContent='正在请求 Gemini AI...';result.textContent='';
+function calcRisk(){
+ const capital=Number(document.getElementById('capital').value);
+ const risk=Number(document.getElementById('risk').value);
+ const entry=Number(document.getElementById('entry').value);
+ const sl=Number(document.getElementById('sl').value);
+ const tp=Number(document.getElementById('tp').value);
+ const out=document.getElementById('riskResult');
+ if(!(capital>0&&risk>0&&entry>0&&sl>0&&tp>0)||entry===sl){
+  out.textContent='请检查资金、风险比例、入场价、止损价和止盈价。';
+  return;
+ }
+ const riskMoney=capital*risk/100;
+ const distance=Math.abs(entry-sl);
+ const reward=Math.abs(tp-entry);
+ const rr=reward/distance;
+ out.textContent=`计划风险金额：$${riskMoney.toFixed(2)}；止损距离：${distance.toFixed(5)}；盈亏比：1:${rr.toFixed(2)}。实际手数须按交易品种合约规格、账户币种和点值另行换算。`;
+}
+
+async function aiAnalyze(){
+ const out=document.getElementById('aiResult');
+ if(!lastAnalysis){out.textContent='请先获取行情。';return;}
+ out.textContent='AI分析中...';
  try{
-  const symbol=$('symbol').value,tf=$('tf').value;
-  const price=D&&D.c.length?D.c[D.c.length-1]:null;
-  const payload={
-   symbol,timeframe:tf,price,
-   direction:$('aiDirection').value,
-   structure:$('aiStructure').value,
-   technicalSignal:$('signal').textContent,
-   trend:$('trend').textContent,
-   liquidity:$('liq').textContent,
-   delta:$('delta').textContent
-  };
-  const response=await fetch('/api/analyze',{
+  const res=await fetch('/api/analyze',{
    method:'POST',
    headers:{'Content-Type':'application/json'},
-   body:JSON.stringify(payload)
+   body:JSON.stringify(lastAnalysis)
   });
-  const data=await response.json();
-  if(!response.ok||!data.success)throw Error(data.details||data.error||'AI请求失败');
-  status.textContent='Gemini AI 分析成功 · '+data.model;
-  result.textContent=data.analysis;
- }catch(error){
-  status.textContent='AI分析失败';
-  result.textContent=error.message;
- }finally{btn.disabled=false}
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error||data.message||'AI请求失败');
+  out.textContent=data.analysis||data.text||data.result||JSON.stringify(data);
+ }catch(e){
+  out.textContent='AI分析失败：'+e.message+'。请检查Vercel的GEMINI_API_KEY和/api/analyze接口。';
+ }
 }
-
-$('symbol').addEventListener('change',()=>{D=null;PLAN=null;loadMarket()});
-$('tf').addEventListener('change',()=>{D=null;PLAN=null;loadMarket()});
-['capital','risk','ein','sin'].forEach(k=>$(k).addEventListener('input',riskCalc));
-window.addEventListener('resize',()=>{if(D)analyze()});
 </script>
 </body>
 </html>
