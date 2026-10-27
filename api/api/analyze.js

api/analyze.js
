@@ -1,0 +1,133 @@
+
+export default async function handler(req, res) {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      success: false,
+      error: "请使用 POST 请求"
+    });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({
+      success: false,
+      error: "Vercel 未配置 GEMINI_API_KEY"
+    });
+  }
+
+  try {
+    const body = req.body || {};
+    const symbol = String(body.symbol || "EUR/USD");
+    const price = Number(body.price);
+    const direction = String(body.direction || "未指定");
+    const structure = String(body.structure || "未指定");
+    const timeframe = String(body.timeframe || "H1");
+
+    if (body.price !== undefined && !Number.isFinite(price)) {
+      return res.status(400).json({
+        success: false,
+        error: "价格格式不正确"
+      });
+    }
+
+    const prompt = `
+你是一名专业的外汇技术分析助手。
+请用简体中文分析以下交易信息，并严格遵守风险控制。
+
+交易品种：${symbol}
+当前价格：${Number.isFinite(price) ? price : "未提供"}
+用户选择的市场方向：${direction}
+用户选择的市场结构：${structure}
+分析周期：${timeframe}
+
+请按以下结构输出：
+1. 市场方向与判断依据
+2. 趋势结构与关键价位
+3. 可能的入场条件
+4. 止损思路与风险控制
+5. 什么情况下应当观望
+6. 当前结论：偏多、偏空或观望
+
+规则：
+- 不得编造未提供的实时价格、K线、新闻或指标。
+- 当前没有K线数据时，明确说明分析仅依据用户提供的信息。
+- 不保证盈利，不给出确定性预测。
+- 不自动下单。
+- 如果信息不足，优先建议等待确认。
+- 使用清晰、简洁的中文。
+`;
+
+    const model = "gemini-2.5-flash";
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/" +
+      model +
+      ":generateContent";
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 1200
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Gemini API error:", response.status, data);
+
+      return res.status(502).json({
+        success: false,
+        error: "Gemini API 请求失败",
+        details:
+          data?.error?.message ||
+          `Gemini HTTP ${response.status}`
+      });
+    }
+
+    const analysis = (data.candidates?.[0]?.content?.parts || [])
+      .map(part => part.text || "")
+      .join("\n")
+      .trim();
+
+    if (!analysis) {
+      return res.status(502).json({
+        success: false,
+        error: "Gemini 没有返回分析内容",
+        details: "模型可能未生成文本，请查看 Vercel 日志。"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      model,
+      symbol,
+      price: Number.isFinite(price) ? price : null,
+      analysis
+    });
+  } catch (error) {
+    console.error("Analyze API error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "服务器分析失败",
+      details: error.message || "未知错误"
+    });
+  }
+}
